@@ -59,7 +59,12 @@ def load_files():
         GlobalVars.bodyfetcher.previous_max_ids = _load_pickle("bodyfetcherMaxIds.p", encoding='utf-8')
     if os.path.isfile("bodyfetcherQueueTimings.p"):
         GlobalVars.bodyfetcher.queue_timings = _load_pickle("bodyfetcherQueueTimings.p", encoding='utf-8')
-    load_blacklists()
+    if GlobalVars.blacklisted_usernames is None and \
+            GlobalVars.blacklisted_websites is None and \
+            GlobalVars.bad_keywords is None and \
+            GlobalVars.watched_keywords is None:
+        # Blacklists not loaded? Load 'em now
+        load_blacklists()
 
 
 def filter_auto_ignored_posts():

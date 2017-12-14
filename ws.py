@@ -34,6 +34,7 @@ import requests
 from tld.utils import update_tld_names, TldIOError
 from helpers import log
 from tasks import Tasks
+import helios
 
 import chatcommands
 
@@ -76,6 +77,12 @@ GlobalVars.bodyfetcher = BodyFetcher()
 
 load_files()
 filter_auto_ignored_posts()
+log("info", "Blacklists loaded. Websites: {}, Usernames: {}, Keywords: {}, Watchlist: {}".format(
+    len(GlobalVars.blacklisted_websites),
+    len(GlobalVars.blacklisted_usernames),
+    len(GlobalVars.bad_keywords),
+    len(GlobalVars.watched_keywords)
+))
 
 
 GlobalVars.s = "[ " + GlobalVars.chatmessage_prefix + " ] " \

@@ -91,3 +91,9 @@ rooms_custom.yml
 
 # Ignore .DS_Store file (usually seen in Mac environments)
 .DS_Store
+
+# Old Smokey txt files
+watched_keywords.txt
+bad_keywords.txt
+blacklisted_usernames.txt
+blacklisted_websites.txt

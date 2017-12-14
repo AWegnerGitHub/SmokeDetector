@@ -3,6 +3,8 @@ import regex
 
 from globalvars import GlobalVars
 from helpers import log
+from helios import HeliosEndpoint, BlacklistType
+import requests
 
 
 def load_blacklists():
@@ -108,13 +110,58 @@ class TSVDictParser(BlacklistParser):
         return False, -1
 
 
+class HeliosParser(BlacklistParser):
+    def parse(self):
+        endpoint = "{}{}".format(HeliosEndpoint['BLACKLISTS'], self._filename)
+        response = requests.get(endpoint)
+        return [r for r in response.json()['items']]
+
+    def add(self, item: str):
+        endpoint = "{}{}".format(HeliosEndpoint['BLACKLISTS'], self._filename)
+        if GlobalVars.helios_key:
+            params = {'pattern': item}
+            response = requests.post(endpoint, json=params, headers={'Authorization': GlobalVars.helios_key})
+            if response.json()['error_type']:
+                log("error", "Error occurred while adding pattern to Helios")
+                log("error", "Pattern: {}".format(item))
+                log("error", "{}".format(response.json()['message']))
+                return (False, "Problem adding pattern {}. Error type: {}".format(
+                    item,
+                    response.json()['error_type'])
+                )
+            else:
+                return (True, "Successfully added {}".format(item))
+                # TODO: Write to local file
+        else:   # Handle case where a key isn't set
+            raise NotImplementedError
+
+    def remove(self, item: str):
+        with open(self._filename, 'r+', encoding='utf-8') as f:
+            items = f.readlines()
+            items = [x for x in items if item not in x]
+            f.seek(0)
+            f.truncate()
+            f.writelines(items)
+
+    def exists(self, item: str):
+        with open(self._filename, 'r', encoding='utf-8') as f:
+            lines = f.readlines()
+            for i, x in enumerate(lines):
+                if item in x:
+                    return True, i + 1
+
+        return False, -1
+
+
 class Blacklist:
-    KEYWORDS = ('bad_keywords.txt', BasicListParser)
-    WEBSITES = ('blacklisted_websites.txt', BasicListParser)
-    USERNAMES = ('blacklisted_usernames.txt', BasicListParser)
-    WATCHED_KEYWORDS = ('watched_keywords.txt', TSVDictParser)
+    KEYWORDS = (BlacklistType['KEYWORD'], HeliosParser)
+    WEBSITES = (BlacklistType['WEBSITE'], HeliosParser)
+    USERNAMES = (BlacklistType['USERNAME'], HeliosParser)
+    WATCHED_KEYWORDS = (BlacklistType['WATCH'], HeliosParser)
 
     def __init__(self, type):
+        log("info", "Filename: {}".format(type[0]))
+        log("info", "Parser: {}".format(type[1]))
         self._filename = type[0]
         self._parser = type[1](self._filename)
 

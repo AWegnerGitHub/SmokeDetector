@@ -4,6 +4,11 @@ from chatcommunicate import add_room, block_room, CmdException, command, get_rep
     tell_rooms
 # noinspection PyUnresolvedReferences
 from globalvars import GlobalVars
+# This is included so that we can reimport the whole module
+# later and rebuild our lists after adding to them without
+# restarting the entire system.
+import imp
+import findspam
 from findspam import FindSpam
 # noinspection PyUnresolvedReferences
 from datetime import datetime
@@ -27,6 +32,7 @@ import regex
 from helpers import only_blacklists_changed
 from classes import Post
 from classes.feedback import *
+from helios import Helios
 
 
 # TODO: Do we need uid == -2 check?  Turn into "is_user_valid" check
@@ -261,13 +267,14 @@ def do_blacklist(pattern, blacklist_type, msg, force=False):
             raise CmdException("That pattern looks like it's already caught by " + format_blacklist_reasons(reasons) +
                                "; append `-force` if you really want to do that.")
 
-    _, result = GitManager.add_to_blacklist(
-        blacklist=blacklist_type,
-        item_to_blacklist=pattern,
-        username=msg.owner.name,
-        chat_profile_link=chat_user_profile_link,
-        code_permissions=is_code_privileged(msg._client.host, msg.owner.id)
+    _, result = Helios.add_blacklist(
+        blacklist_type=blacklist_type,
+        pattern=pattern
     )
+
+    # Refresh our cache of listed bad things
+    imp.reload(findspam)
+    from findspam import FindSpam
 
     return result
 

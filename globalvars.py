@@ -151,3 +151,16 @@ class GlobalVars:
     except NoOptionError:
         github_username = None
         github_password = None
+
+    try:
+        helios_endpoint = config.get("Config", "helios_endpoint")
+    except NoOptionError:
+        helios_endpoint = None
+        log('error', "Helios Endpoints not set.")
+
+    try:
+        helios_key = config.get("Config", "helios_key")
+    except NoOptionError:
+        helios_key = None
+        log('info', "No Helios key found. This instance will be unable to"
+            "write blacklists, watchlists or notifications back to Helios.")

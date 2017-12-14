@@ -12,3 +12,6 @@ location=Continuous Integration. If you're seeing this, create a config file wit
 # Set GitHub keys
 # github_username=username@domain.com
 # github_password=p@55w0rd
+
+helios_endpoint=https://fggqk618ri.execute-api.us-east-1.amazonaws.com/dev/
+#helios_key=token_assigned_by_helios
