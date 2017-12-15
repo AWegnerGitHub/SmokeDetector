@@ -42,6 +42,8 @@ class Helios:
         """
         blacklist = kwargs.get('blacklist_type', None)
         pattern = kwargs.get('pattern', None)
+        requestor = kwargs.get('request_user', None)
+        profile_link = kwargs.get('chat_link', None)
         log("info", "Blacklist list: {}".format(blacklist))
         log("info", "Pattern: {}".format(pattern))
 # TODO: Add check if exists first
@@ -65,7 +67,7 @@ class Helios:
             return (False, "Invalid blacklist type specified, something has broken badly!")
         blacklister = blacklists.Blacklist(blacklist_type)
         if cls.write_access:
-            status, response = blacklister.add(pattern)
+            status, response = blacklister.add(pattern, requestor=requestor, chat_link=profile_link)
             return (status, response)
         else:
             return (False, "Helios key is not set. Writing disabled")

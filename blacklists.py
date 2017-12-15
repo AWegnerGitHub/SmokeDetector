@@ -116,10 +116,12 @@ class HeliosParser(BlacklistParser):
         response = requests.get(endpoint)
         return [r for r in response.json()['items']]
 
-    def add(self, item: str):
+    def add(self, item: str, **kwargs):
+        requestor = kwargs.get('requestor', None)
+        chat_link = kwargs.get('chat_link', None)
         endpoint = "{}{}".format(HeliosEndpoint['BLACKLISTS'], self._filename)
         if GlobalVars.helios_key:
-            params = {'pattern': item}
+            params = {'pattern': item, 'request_user': requestor, 'chat_link': chat_link}
             response = requests.post(endpoint, json=params, headers={'Authorization': GlobalVars.helios_key})
             if response.json()['error_type']:
                 log("error", "Error occurred while adding pattern to Helios")
@@ -179,8 +181,8 @@ class Blacklist:
     def parse(self):
         return self._parser.parse()
 
-    def add(self, item):
-        return self._parser.add(item)
+    def add(self, item, **kwargs):
+        return self._parser.add(item, **kwargs)
 
     def remove(self, item):
         return self._parser.remove(item)
