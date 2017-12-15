@@ -136,12 +136,23 @@ class HeliosParser(BlacklistParser):
             raise NotImplementedError
 
     def remove(self, item: str):
-        with open(self._filename, 'r+', encoding='utf-8') as f:
-            items = f.readlines()
-            items = [x for x in items if item not in x]
-            f.seek(0)
-            f.truncate()
-            f.writelines(items)
+        endpoint = "{}{}".format(HeliosEndpoint['BLACKLISTS'], self._filename)
+        if GlobalVars.helios_key:
+            params = {'pattern': item}
+            response = requests.delete(endpoint, json=params, headers={'Authorization': GlobalVars.helios_key})
+            if response.json()['error_type']:
+                log("error", "Error occurred while deleting pattern from Helios")
+                log("error", "Pattern: {}".format(item))
+                log("error", "{}".format(response.json()['message']))
+                return (False, "Problem deleting pattern {}. Error type: {}".format(
+                    item,
+                    response.json()['error_type'])
+                )
+            else:
+                return (True, "Successfully removed {}".format(item))
+                # TODO: Write to local file
+        else:   # Handle case where a key isn't set
+            raise NotImplementedError
 
     def exists(self, item: str):
         with open(self._filename, 'r', encoding='utf-8') as f:

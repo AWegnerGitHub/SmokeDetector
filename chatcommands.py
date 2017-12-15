@@ -269,7 +269,9 @@ def do_blacklist(pattern, blacklist_type, msg, force=False):
 
     _, result = Helios.add_blacklist(
         blacklist_type=blacklist_type,
-        pattern=pattern
+        pattern=pattern,
+        request_user=msg.owner.name,
+        chat_link=chat_user_profile_link
     )
 
     # Refresh our cache of listed bad things
