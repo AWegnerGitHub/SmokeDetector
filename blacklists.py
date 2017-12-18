@@ -157,13 +157,16 @@ class HeliosParser(BlacklistParser):
             raise NotImplementedError
 
     def exists(self, item: str):
-        with open(self._filename, 'r', encoding='utf-8') as f:
-            lines = f.readlines()
-            for i, x in enumerate(lines):
-                if item in x:
-                    return True, i + 1
-
-        return False, -1
+        if self._filename == "watch-keyword":
+            return item in GlobalVars.watched_keywords, "Memory Check"
+        elif self._filename == "blacklist-website":
+            return item in GlobalVars.blacklisted_websites, "Memory Check"
+        elif self._filename == "blacklist-username":
+            return item in GlobalVars.blacklisted_usernames, "Memory Check"
+        elif self._filename == "blacklist-keyword":
+            return item in GlobalVars.bad_keywords, "Memory Check"
+        else:
+            return False, -1
 
 
 class Blacklist:

@@ -16,6 +16,7 @@ from utcdate import UtcDate
 from apigetpost import api_get_post, PostData
 from datahandling import *
 from blacklists import load_blacklists
+import blacklists as imported_blacklists
 from metasmoke import Metasmoke
 from parsing import *
 from spamhandling import handle_spam
@@ -763,6 +764,40 @@ def test(content, alias_used="test"):
             result += why_response
 
     return result
+
+
+# noinspection PyIncorrectDocstring
+@command(str, aliases=["exists"])
+def check_exists(content):
+    """
+    Check if a pattern already is blacklisted - must be exact match
+    :param content:
+    :return: A string
+    """
+    lists = [imported_blacklists.Blacklist.KEYWORDS,
+        imported_blacklists.Blacklist.WATCHED_KEYWORDS,
+        imported_blacklists.Blacklist.USERNAMES,
+        imported_blacklists.Blacklist.WEBSITES
+    ]
+
+    results = []
+    for b in lists:
+        results.append((b[0], imported_blacklists.Blacklist(b).exists(content)))
+
+    if not any([i[1][0] for i in results]):
+        response = "Item not in any black list"
+    else:
+        response = ", ".join([i[0] for i in results if i[1][0] is True])
+        if response:
+            response = "Item appears in {}".format(response)
+    from helpers import log
+    log("info", "Results: {}".format(results))
+    log("info", "Response: {}".format(response))
+    return response
+
+
+
+
 
 
 # noinspection PyIncorrectDocstring
