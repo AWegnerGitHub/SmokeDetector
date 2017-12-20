@@ -268,7 +268,7 @@ def do_blacklist(pattern, blacklist_type, msg, force=False):
             raise CmdException("That pattern looks like it's already caught by " + format_blacklist_reasons(reasons) +
                                "; append `-force` if you really want to do that.")
 
-    _, result = Helios.add_blacklist(
+    status, result = Helios.add_blacklist(
         blacklist_type=blacklist_type,
         pattern=pattern,
         request_user=msg.owner.name,
@@ -276,8 +276,9 @@ def do_blacklist(pattern, blacklist_type, msg, force=False):
     )
 
     # Refresh our cache of listed bad things
-    imp.reload(findspam)
-    from findspam import FindSpam
+    if status:
+        imp.reload(findspam)
+        from findspam import FindSpam
 
     return result
 

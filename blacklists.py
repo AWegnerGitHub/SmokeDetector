@@ -1,10 +1,12 @@
 from typing import Union
 import regex
+from pathlib import Path
 
 from globalvars import GlobalVars
 from helpers import log
 from helios import HeliosEndpoint, BlacklistType
 import requests
+import os
 
 
 def load_blacklists():
@@ -114,34 +116,67 @@ class HeliosParser(BlacklistParser):
     def parse(self):
         endpoint = "{}{}".format(HeliosEndpoint['BLACKLISTS'], self._filename)
         response = requests.get(endpoint)
-        return [r for r in response.json()['items']]
+        items = [r for r in response.json()['items']]
+
+        # Check if we have any local failures
+        failed_items = []
+        filename = "add-{}".format(self._filename)
+        error_updating = False
+        if Path(filename).is_file():
+            log("info", "{} exists. Merging into {} memory".format(filename, self._filename))
+            with open(filename, 'r', encoding='utf-8') as f:
+                for lineno, line in enumerate(f, 1):
+                    if regex.compile('^\s*(?:#|$)').match(line):
+                        continue
+                    pattern = requestor = profile = None
+                    try:
+                        pattern, requestor, profile = line.rstrip().split('\t')
+                        failed_items.append(pattern)
+                    except ValueError as err:
+                        log('error', '{0}:{1}:{2}'.format(self._filename, lineno, err))
+                        continue
+
+                    if pattern:
+                        res = self.add(item=pattern, requestor=requestor, chat_link=profile, force_update=False)
+                        if res[0] is False:
+                            error_updating = True
+                            log("error", "Error occurred while merging previous failures.")
+                            log("error", "Error: {}".format(res[1]))
+            if not error_updating:
+                os.remove(filename)
+
+        return items + failed_items
 
     def add(self, item: str, **kwargs):
         requestor = kwargs.get('requestor', None)
         chat_link = kwargs.get('chat_link', None)
+        force_update = kwargs.get('force_update', True)
         endpoint = "{}{}".format(HeliosEndpoint['BLACKLISTS'], self._filename)
         if GlobalVars.helios_key:
             params = {'pattern': item, 'request_user': requestor, 'chat_link': chat_link}
             response = requests.post(endpoint, json=params, headers={'Authorization': GlobalVars.helios_key})
+            pattern = item
             if response.status_code == 403 or response.json()['error_type']:
                 log("error", "Error occurred while adding pattern to Helios")
                 log("error", "Pattern: {}".format(item))
                 log("error", "Response from Helios: {}".format(response.json()))
 
                 # Save our failed record to local error file
-                filename = "add-{}".format(self._filename)
-                with open(filename, 'a+', encoding='utf-8') as f:
-                    log("error", "Saving pattern {} to {}".format(item, self._filename))
-                    last_char = f.read()[-1:]
-                    if last_char not in ['', '\n']:
-                        item = '\n' + item
-                    f.write(item + '\n')
+                if force_update:
+                    filename = "add-{}".format(self._filename)
+                    with open(filename, 'a+', encoding='utf-8') as f:
+                        log("error", "Saving pattern {} to {}".format(item, self._filename))
+                        item = '{}\t{}\t{}'.format(item, requestor, chat_link)
+                        last_char = f.read()[-1:]
+                        if last_char not in ['', '\n']:
+                            item = '\n' + item
+                        f.write(item + '\n')
 
                 return (False, "Problem adding pattern {}.".format(
-                    item)
+                    pattern)
                 )
             else:
-                return (True, "Successfully added {}".format(item))
+                return (True, "Successfully added {}".format(pattern))
                 # TODO: Write to local file
         else:   # Handle case where a key isn't set
             raise NotImplementedError
@@ -203,8 +238,6 @@ class Blacklist:
     WATCHED_KEYWORDS = (BlacklistType['WATCH'], HeliosParser)
 
     def __init__(self, type):
-        log("info", "Filename: {}".format(type[0]))
-        log("info", "Parser: {}".format(type[1]))
         self._filename = type[0]
         self._parser = type[1](self._filename)
 
