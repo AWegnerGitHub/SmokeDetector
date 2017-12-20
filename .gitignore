@@ -99,7 +99,11 @@ blacklisted_usernames.txt
 blacklisted_websites.txt
 
 # Temporary cache files when writing to Helios fails
-watch-keyword
-blacklist-website
-blacklist-username
-blacklist-keyword
+add-watch-keyword
+add-blacklist-website
+add-blacklist-username
+add-blacklist-keyword
+remove-watch-keyword
+remove-blacklist-website
+remove-blacklist-username
+remove-blacklist-keyword

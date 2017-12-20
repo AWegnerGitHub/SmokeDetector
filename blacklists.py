@@ -129,7 +129,8 @@ class HeliosParser(BlacklistParser):
                 log("error", "Response from Helios: {}".format(response.json()))
 
                 # Save our failed record to local error file
-                with open(self._filename, 'a+', encoding='utf-8') as f:
+                filename = "add-{}".format(self._filename)
+                with open(filename, 'a+', encoding='utf-8') as f:
                     log("error", "Saving pattern {} to {}".format(item, self._filename))
                     last_char = f.read()[-1:]
                     if last_char not in ['', '\n']:
@@ -159,13 +160,23 @@ class HeliosParser(BlacklistParser):
                 )
 
                 # If we have an error file, check if this pattern is in it
-                if Path(self._filename).is_file():
-                    with open(self._filename, 'r+', encoding='utf-8') as f:
+                filename = "add-{}".format(self._filename)
+                if Path(filename).is_file():
+                    with open(filename, 'r+', encoding='utf-8') as f:
                         items = f.readlines()
                         items = [x for x in items if item not in x]
                         f.seek(0)
                         f.truncate()
                         f.writelines(items)
+
+                filename = "remove-{}".format(self._filename)
+                with open(filename, 'r+', encoding='utf-8') as f:
+                    items = f.readlines()
+                    items = [x for x in items if item not in x]
+                    f.seek(0)
+                    f.truncate()
+                    f.writelines(items)
+
             else:
                 return (True, "Successfully removed {}".format(item))
                 # TODO: Write to local file
