@@ -775,7 +775,8 @@ def check_exists(content):
     :param content:
     :return: A string
     """
-    lists = [imported_blacklists.Blacklist.KEYWORDS,
+    lists = [
+        imported_blacklists.Blacklist.KEYWORDS,
         imported_blacklists.Blacklist.WATCHED_KEYWORDS,
         imported_blacklists.Blacklist.USERNAMES,
         imported_blacklists.Blacklist.WEBSITES
