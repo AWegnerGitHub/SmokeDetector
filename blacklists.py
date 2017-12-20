@@ -123,13 +123,21 @@ class HeliosParser(BlacklistParser):
         if GlobalVars.helios_key:
             params = {'pattern': item, 'request_user': requestor, 'chat_link': chat_link}
             response = requests.post(endpoint, json=params, headers={'Authorization': GlobalVars.helios_key})
-            if response.json()['error_type']:
+            if response.status_code == 403 or response.json()['error_type']:
                 log("error", "Error occurred while adding pattern to Helios")
                 log("error", "Pattern: {}".format(item))
-                log("error", "{}".format(response.json()['message']))
-                return (False, "Problem adding pattern {}. Error type: {}".format(
-                    item,
-                    response.json()['error_type'])
+                log("error", "Response from Helios: {}".format(response.json()))
+
+                # Save our failed record to local error file
+                with open(self._filename, 'a+', encoding='utf-8') as f:
+                    log("error", "Saving pattern {} to {}".format(item, self._filename))
+                    last_char = f.read()[-1:]
+                    if last_char not in ['', '\n']:
+                        item = '\n' + item
+                    f.write(item + '\n')
+
+                return (False, "Problem adding pattern {}.".format(
+                    item)
                 )
             else:
                 return (True, "Successfully added {}".format(item))
@@ -142,14 +150,22 @@ class HeliosParser(BlacklistParser):
         if GlobalVars.helios_key:
             params = {'pattern': item}
             response = requests.delete(endpoint, json=params, headers={'Authorization': GlobalVars.helios_key})
-            if response.json()['error_type']:
+            if response.status_code == 403 or response.json()['error_type']:
                 log("error", "Error occurred while deleting pattern from Helios")
                 log("error", "Pattern: {}".format(item))
-                log("error", "{}".format(response.json()['message']))
-                return (False, "Problem deleting pattern {}. Error type: {}".format(
-                    item,
-                    response.json()['error_type'])
+                log("error", "{}".format(response.json()))
+                return (False, "Problem deleting pattern {}.".format(
+                    item)
                 )
+
+                # If we have an error file, check if this pattern is in it
+                if Path(self._filename).is_file():
+                    with open(self._filename, 'r+', encoding='utf-8') as f:
+                        items = f.readlines()
+                        items = [x for x in items if item not in x]
+                        f.seek(0)
+                        f.truncate()
+                        f.writelines(items)
             else:
                 return (True, "Successfully removed {}".format(item))
                 # TODO: Write to local file

@@ -796,10 +796,6 @@ def check_exists(content):
     return response
 
 
-
-
-
-
 # noinspection PyIncorrectDocstring
 @command()
 def threads():

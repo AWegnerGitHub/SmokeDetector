@@ -97,3 +97,9 @@ watched_keywords.txt
 bad_keywords.txt
 blacklisted_usernames.txt
 blacklisted_websites.txt
+
+# Temporary cache files when writing to Helios fails
+watch-keyword
+blacklist-website
+blacklist-username
+blacklist-keyword
