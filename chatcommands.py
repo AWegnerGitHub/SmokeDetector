@@ -283,6 +283,39 @@ def do_blacklist(pattern, blacklist_type, msg, force=False):
     return result
 
 
+def do_unblacklist(pattern, blacklist_type, msg, force=False):
+    """
+    Removes a string from the website blacklist
+    :param pattern:
+    :param blacklist_type:
+    :param msg:
+    :param force:
+    :return: A string
+    """
+    # noinspection PyProtectedMember
+
+    chat_user_profile_link = "http://chat.{host}/users/{id}".format(host=msg._client.host,
+                                                                    id=msg.owner.id)
+    try:
+        regex.compile(pattern)
+    except regex._regex_core.error:
+        raise CmdException("An invalid pattern was provided, not blacklisting.")
+
+    status, result = Helios.remove_blacklist(
+        blacklist_type=blacklist_type,
+        pattern=pattern,
+        request_user=msg.owner.name,
+        chat_link=chat_user_profile_link
+    )
+
+    # Refresh our cache of listed bad things
+    if status:
+        imp.reload(findspam)
+        from findspam import FindSpam
+
+    return result
+
+
 # noinspection PyIncorrectDocstring
 @command(str, whole_msg=True, privileged=True, give_name=True, aliases=["blacklist-keyword",
                                                                         "blacklist-website",
@@ -292,7 +325,7 @@ def do_blacklist(pattern, blacklist_type, msg, force=False):
                                                                         "blacklist-username-force"])
 def blacklist_keyword(msg, pattern, alias_used="blacklist-keyword"):
     """
-    Adds a string to the blacklist and commits/pushes to GitHub
+    Adds a string to the blacklist
     :param msg:
     :param pattern:
     :return: A string
@@ -300,6 +333,25 @@ def blacklist_keyword(msg, pattern, alias_used="blacklist-keyword"):
 
     parts = alias_used.split("-")
     return do_blacklist(pattern, parts[1], msg, force=len(parts) > 2)
+
+
+# noinspection PyIncorrectDocstring
+@command(str, whole_msg=True, privileged=True, give_name=True, aliases=["unblacklist-keyword",
+                                                                        "unblacklist-website",
+                                                                        "unblacklist-username",
+                                                                        "unblacklist-keyword-force",
+                                                                        "unblacklist-website-force",
+                                                                        "unblacklist-username-force"])
+def unblacklist_keyword(msg, pattern, alias_used="blacklist-keyword"):
+    """
+    Removes a string from the blacklist
+    :param msg:
+    :param pattern:
+    :return: A string
+    """
+
+    parts = alias_used.split("-")
+    return do_unblacklist(pattern, parts[1], msg, force=len(parts) > 2)
 
 
 # noinspection PyIncorrectDocstring
@@ -313,6 +365,19 @@ def watch(msg, website):
     """
 
     return do_blacklist(website, "watch_keyword", msg, force=False)
+
+
+# noinspection PyIncorrectDocstring
+@command(str, whole_msg=True, privileged=True, aliases=["watch-keyword"])
+def unwatch(msg, website):
+    """
+    Adds a string to the watched keywords list and commits/pushes to GitHub
+    :param msg:
+    :param website:
+    :return: A string
+    """
+
+    return do_unblacklist(website, "watch_keyword", msg, force=False)
 
 
 # noinspection PyIncorrectDocstring

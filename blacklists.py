@@ -33,83 +33,83 @@ class BlacklistParser:
         pass
 
 
-class BasicListParser(BlacklistParser):
-    def parse(self):
-        with open(self._filename, 'r', encoding='utf-8') as f:
-            return [line.rstrip() for line in f if len(line.rstrip()) > 0]
-
-    def add(self, item: str):
-        with open(self._filename, 'a+', encoding='utf-8') as f:
-            last_char = f.read()[-1:]
-            if last_char not in ['', '\n']:
-                item = '\n' + item
-            f.write(item + '\n')
-
-    def remove(self, item: str):
-        with open(self._filename, 'r+', encoding='utf-8') as f:
-            items = f.readlines()
-            items = [x for x in items if item not in x]
-            f.seek(0)
-            f.truncate()
-            f.writelines(items)
-
-    def exists(self, item: str):
-        with open(self._filename, 'r', encoding='utf-8') as f:
-            lines = f.readlines()
-            for i, x in enumerate(lines):
-                if item in x:
-                    return True, i + 1
-
-        return False, -1
-
-
-class TSVDictParser(BlacklistParser):
-    def parse(self):
-        list = {}
-        with open(self._filename, 'r', encoding='utf-8') as f:
-            for lineno, line in enumerate(f, 1):
-                if regex.compile('^\s*(?:#|$)').match(line):
-                    continue
-                try:
-                    when, by_whom, what = line.rstrip().split('\t')
-                except ValueError as err:
-                    log('error', '{0}:{1}:{2}'.format(self._filename, lineno, err))
-                    continue
-                list[what] = {'when': when, 'by': by_whom}
-
-        return list
-
-    def add(self, item: Union[str, dict]):
-        with open(self._filename, 'a+', encoding='utf-8') as f:
-            if isinstance(item, dict):
-                item = '{}\t{}\t{}'.format(item[0], item[1], item[2])
-            last_char = f.read()[-1:]
-            if last_char not in ['', '\n']:
-                item = '\n' + item
-            f.write(item + '\n')
-
-    def remove(self, item: Union[str, dict]):
-        if isinstance(item, dict):
-            item = item[2]
-
-        with open(self._filename, 'r+', encoding='utf-8') as f:
-            items = f.readlines()
-            items = [x for x in items if item not in x]
-            f.seek(0)
-            f.truncate()
-            f.writelines(items)
-
-    def exists(self, item: Union[str, dict]):
-        if isinstance(item, dict):
-            item = item[2]
-
-        with open(self._filename, 'r', encoding='utf-8') as f:
-            lines = f.readlines()
-            for i, x in enumerate(lines):
-                if item in x:
-                    return True, i + 1
-
-        return False, -1
+# class BasicListParser(BlacklistParser):
+#     def parse(self):
+#         with open(self._filename, 'r', encoding='utf-8') as f:
+#             return [line.rstrip() for line in f if len(line.rstrip()) > 0]
+#
+#     def add(self, item: str):
+#         with open(self._filename, 'a+', encoding='utf-8') as f:
+#             last_char = f.read()[-1:]
+#             if last_char not in ['', '\n']:
+#                 item = '\n' + item
+#             f.write(item + '\n')
+#
+#     def remove(self, item: str):
+#         with open(self._filename, 'r+', encoding='utf-8') as f:
+#             items = f.readlines()
+#             items = [x for x in items if item not in x]
+#             f.seek(0)
+#             f.truncate()
+#             f.writelines(items)
+#
+#     def exists(self, item: str):
+#         with open(self._filename, 'r', encoding='utf-8') as f:
+#             lines = f.readlines()
+#             for i, x in enumerate(lines):
+#                 if item in x:
+#                     return True, i + 1
+#
+#         return False, -1
+#
+#
+# class TSVDictParser(BlacklistParser):
+#     def parse(self):
+#         list = {}
+#         with open(self._filename, 'r', encoding='utf-8') as f:
+#             for lineno, line in enumerate(f, 1):
+#                 if regex.compile('^\s*(?:#|$)').match(line):
+#                     continue
+#                 try:
+#                     when, by_whom, what = line.rstrip().split('\t')
+#                 except ValueError as err:
+#                     log('error', '{0}:{1}:{2}'.format(self._filename, lineno, err))
+#                     continue
+#                 list[what] = {'when': when, 'by': by_whom}
+#
+#         return list
+#
+#     def add(self, item: Union[str, dict]):
+#         with open(self._filename, 'a+', encoding='utf-8') as f:
+#             if isinstance(item, dict):
+#                 item = '{}\t{}\t{}'.format(item[0], item[1], item[2])
+#             last_char = f.read()[-1:]
+#             if last_char not in ['', '\n']:
+#                 item = '\n' + item
+#             f.write(item + '\n')
+#
+#     def remove(self, item: Union[str, dict]):
+#         if isinstance(item, dict):
+#             item = item[2]
+#
+#         with open(self._filename, 'r+', encoding='utf-8') as f:
+#             items = f.readlines()
+#             items = [x for x in items if item not in x]
+#             f.seek(0)
+#             f.truncate()
+#             f.writelines(items)
+#
+#     def exists(self, item: Union[str, dict]):
+#         if isinstance(item, dict):
+#             item = item[2]
+#
+#         with open(self._filename, 'r', encoding='utf-8') as f:
+#             lines = f.readlines()
+#             for i, x in enumerate(lines):
+#                 if item in x:
+#                     return True, i + 1
+#
+#         return False, -1
 
 
 class HeliosParser(BlacklistParser):
@@ -186,6 +186,7 @@ class HeliosParser(BlacklistParser):
         if GlobalVars.helios_key:
             params = {'pattern': item}
             response = requests.delete(endpoint, json=params, headers={'Authorization': GlobalVars.helios_key})
+            log("info", "Response: {}".format(response.json()))
             if response.status_code == 403 or response.json()['error_type']:
                 log("error", "Error occurred while deleting pattern from Helios")
                 log("error", "Pattern: {}".format(item))

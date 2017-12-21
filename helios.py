@@ -46,7 +46,6 @@ class Helios:
         profile_link = kwargs.get('chat_link', None)
         log("info", "Blacklist list: {}".format(blacklist))
         log("info", "Pattern: {}".format(pattern))
-# TODO: Add check if exists first
 
         try:
             if blacklist == "keyword":
@@ -68,6 +67,42 @@ class Helios:
         blacklister = blacklists.Blacklist(blacklist_type)
         if cls.write_access:
             status, response = blacklister.add(pattern, requestor=requestor, chat_link=profile_link)
+            return (status, response)
+        else:
+            return (False, "Helios key is not set. Writing disabled")
+
+
+    @classmethod
+    def remove_blacklist(cls, **kwargs):
+        """
+        Unblacklist a specific pattern on a specific list
+        """
+        blacklist = kwargs.get('blacklist_type', None)
+        pattern = kwargs.get('pattern', None)
+        requestor = kwargs.get('request_user', None)
+        log("info", "Blacklist list: {}".format(blacklist))
+        log("info", "Pattern: {}".format(pattern))
+
+        try:
+            if blacklist == "keyword":
+                GlobalVars.bad_keywords.remove(pattern)
+                blacklist_type = blacklists.Blacklist.KEYWORDS
+            if blacklist == "username":
+                GlobalVars.blacklisted_usernames.remove(pattern)
+                blacklist_type = blacklists.Blacklist.USERNAMES
+            if blacklist == "website":
+                GlobalVars.blacklisted_websites.remove(pattern)
+                blacklist_type = blacklists.Blacklist.WEBSITES
+            if blacklist == "watch_keyword":
+                GlobalVars.watched_keywords.remove(pattern)
+                blacklist_type = blacklists.Blacklist.WATCHED_KEYWORDS
+        except KeyError:
+            # Just checking all bases, but blacklist_file_name *might* have empty value
+            # if we don't address it here.
+            return (False, "Invalid blacklist type specified, something has broken badly!")
+        blacklister = blacklists.Blacklist(blacklist_type)
+        if cls.write_access:
+            status, response = blacklister.remove(pattern)
             return (status, response)
         else:
             return (False, "Helios key is not set. Writing disabled")
