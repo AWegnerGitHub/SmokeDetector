@@ -71,7 +71,6 @@ class Helios:
         else:
             return (False, "Helios key is not set. Writing disabled")
 
-
     @classmethod
     def remove_blacklist(cls, **kwargs):
         """
@@ -79,7 +78,6 @@ class Helios:
         """
         blacklist = kwargs.get('blacklist_type', None)
         pattern = kwargs.get('pattern', None)
-        requestor = kwargs.get('request_user', None)
         log("info", "Blacklist list: {}".format(blacklist))
         log("info", "Pattern: {}".format(pattern))
 

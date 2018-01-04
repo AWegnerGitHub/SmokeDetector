@@ -172,14 +172,19 @@ class HeliosParser(BlacklistParser):
                             item = '\n' + item
                         f.write(item + '\n')
 
-                return (False, "Problem adding pattern {}.".format(
-                    pattern)
-                )
+                return (False, "Helios: Problem adding pattern {}.".format(pattern))
             else:
-                return (True, "Successfully added {}".format(pattern))
-                # TODO: Write to local file
+                return (True, "Helios: Successfully added {}".format(pattern))
         else:   # Handle case where a key isn't set
-            raise NotImplementedError
+            filename = "add-{}".format(self._filename)
+            with open(filename, 'a+', encoding='utf-8') as f:
+                log("error", "Saving pattern {} to {}".format(item, self._filename))
+                item = '{}\t{}\t{}'.format(item, requestor, chat_link)
+                last_char = f.read()[-1:]
+                if last_char not in ['', '\n']:
+                    item = '\n' + item
+                f.write(item + '\n')
+            return (True, "Local cache (no Helios key set): Successfully added {}".format(pattern))
 
     def remove(self, item: str):
         endpoint = "{}{}".format(HeliosEndpoint['BLACKLISTS'], self._filename)
@@ -191,9 +196,7 @@ class HeliosParser(BlacklistParser):
                 log("error", "Error occurred while deleting pattern from Helios")
                 log("error", "Pattern: {}".format(item))
                 log("error", "{}".format(response.json()))
-                return (False, "Problem deleting pattern {}.".format(
-                    item)
-                )
+                return (False, "Problem deleting pattern {}.".format(item))
 
                 # If we have an error file, check if this pattern is in it
                 filename = "add-{}".format(self._filename)
