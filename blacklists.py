@@ -117,7 +117,6 @@ class HeliosParser(BlacklistParser):
                 log("error", "Error occurred while deleting pattern from Helios")
                 log("error", "Pattern: {}".format(item))
                 log("error", "{}".format(response.json()))
-                return (False, "Problem deleting pattern {}.".format(item))
 
                 # If we have an error file, check if this pattern is in it
                 filename = "add-{}".format(self._filename)
@@ -137,11 +136,29 @@ class HeliosParser(BlacklistParser):
                     f.truncate()
                     f.writelines(items)
 
+                return (False, "Helios: Problem deleting pattern {}.".format(item))
             else:
-                return (True, "Successfully removed {}".format(item))
-                # TODO: Write to local file
+                return (True, "Helios: Successfully removed {}".format(item))
         else:   # Handle case where a key isn't set
-            raise NotImplementedError
+            # If we have an error file, check if this pattern is in it
+            filename = "add-{}".format(self._filename)
+            if Path(filename).is_file():
+                with open(filename, 'r+', encoding='utf-8') as f:
+                    items = f.readlines()
+                    items = [x for x in items if item not in x]
+                    f.seek(0)
+                    f.truncate()
+                    f.writelines(items)
+
+            filename = "remove-{}".format(self._filename)
+            with open(filename, 'r+', encoding='utf-8') as f:
+                items = f.readlines()
+                items = [x for x in items if item not in x]
+                f.seek(0)
+                f.truncate()
+                f.writelines(items)
+
+            return (True, "Local cache (no Helios key set): Successfully removed {}".format(item))
 
     def exists(self, item: str):
         if self._filename == "watch-keyword":
