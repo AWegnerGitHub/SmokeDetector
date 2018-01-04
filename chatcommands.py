@@ -41,6 +41,17 @@ from helios import Helios
 #
 # System command functions below here
 
+# The following two commands are just bypasses for the "unrecognized command" message, so that pingbot
+# can respond instead.
+@command(aliases=['ping-help'])
+def ping_help():
+    return None
+
+
+@command()
+def groups():
+    return None
+
 
 @command(int, whole_msg=True, privileged=True)
 def approve(msg, pr_num):
@@ -441,6 +452,9 @@ def brownie():
     return "Brown!"
 
 
+COFFEES = ['Espresso', 'Macchiato', 'Ristretto', 'Americano', 'Latte', 'Cappuccino', 'Mocha', 'Affogato']
+
+
 # noinspection PyIncorrectDocstring
 @command(str, whole_msg=True, arity=(0, 1))
 def coffee(msg, other_user):
@@ -450,7 +464,10 @@ def coffee(msg, other_user):
     :param other_user:
     :return: A string
     """
-    return "*brews coffee for @" + (other_user if other_user else msg.owner.name.replace(" ", "")) + "*"
+    if other_user is None:
+        return "*brews a cup of {} for @{}*".format(random.choice(COFFEES), msg.owner.name.replace(" ", ""))
+    else:
+        return "*brews a cup of {} for @{}*".format(random.choice(COFFEES), other_user)
 
 
 # noinspection PyIncorrectDocstring
@@ -495,7 +512,7 @@ def wut():
 @command(aliases=["zomg_hats"])
 def hats():
     wb_start = datetime(2017, 12, 13, 0, 0, 0)
-    wb_end = datetime(2018, 1, 9, 0, 0, 0)
+    wb_end = datetime(2018, 1, 3, 0, 0, 0)
     now = datetime.utcnow()
     return_string = ""
     if wb_start > now:
@@ -982,6 +999,10 @@ def willbenotified(msg, room_id, se_site):
 
 
 RETURN_NAMES = {"admin": ["admin", "admins"], "code_admin": ["code admin", "code admins"]}
+VALID_ROLES = {"admin": "admin",
+               "code_admin": "code_admin",
+               "admins": "admin",
+               "codeadmins": "code_admin"}
 
 
 # noinspection PyIncorrectDocstring,PyMissingTypeHints
@@ -993,17 +1014,12 @@ def whois(msg, role):
     :param role:
     :return: A string
     """
-    valid_roles = {"admin": "admin",
-                   "code_admin": "code_admin",
-                   "admins": "admin",
-                   "codeadmins": "code_admin"}
-
-    if role not in list(valid_roles.keys()):
+    if role not in VALID_ROLES:
         raise CmdException("That is not a user level I can check. "
-                           "I know about {0}".format(", ".join(set(valid_roles.values()))))
+                           "I know about {0}".format(", ".join(set(VALID_ROLES.values()))))
 
-    ms_route = "https://metasmoke.erwaysoftware.com/api/users/?role={}&key={}&per_page=100".format(
-        valid_roles[role],
+    ms_route = "https://metasmoke.erwaysoftware.com/api/v2.0/users/with_role/{}?key={}&per_page=100&filter=JIHF".format(
+        VALID_ROLES[role],
         GlobalVars.metasmoke_key)
 
     user_response = requests.get(ms_route)
@@ -1045,7 +1061,7 @@ def whois(msg, role):
                                 msg._client.get_user(admin).last_seen)
                                for admin in admins_not_in_room]
 
-    return_name = RETURN_NAMES[valid_roles[role]][0 if len(admin_ids) == 1 else 1]
+    return_name = RETURN_NAMES[VALID_ROLES[role]][0 if len(admin_ids) == 1 else 1]
 
     response = "I am aware of {} {}".format(len(admin_ids), return_name)
 
@@ -1309,9 +1325,11 @@ def delete(msg):
     :param msg:
     :return: None
     """
-    if msg.room.id == 11540:
-        return "Messages from SmokeDetector in Charcoal HQ are generally kept "\
-               "as records. If you really need to delete a message, please use "\
+
+    post_data = get_report_data(msg)
+    if post_data and msg.room.id == 11540:
+        return "Reports from SmokeDetector in Charcoal HQ are generally kept "\
+               "as records. If you really need to delete a report, please use "\
                "`sd delete-force`. See [this note on message deletion]"\
                "(https://charcoal-se.org/smokey/Commands"\
                "#a-note-on-message-deletion) for more details."
@@ -1370,6 +1388,8 @@ def false(feedback, msg, alias_used="false"):
             result = "Registered " + post_type + " as false positive and removed user from the blacklist."
         else:
             result = "Registered " + post_type + " as false positive."
+    else:
+        result = "Registered " + post_type + " as false positive."
 
     try:
         if int(msg.room.id) != int(GlobalVars.charcoal_hq.id):
@@ -1460,6 +1480,8 @@ def true(feedback, msg, alias_used="true"):
         else:
             result = "Registered " + post_type + " as true positive. If you want to "\
                      "blacklist the poster, use `trueu` or `tpu`."
+    else:
+        result = "Registered " + post_type + " as true positive."
 
     return result if not feedback_type.always_silent else ""
 

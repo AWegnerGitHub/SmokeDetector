@@ -25,6 +25,7 @@ LEVEN_DOMAIN_DISTANCE = 3
 SIMILAR_THRESHOLD = 0.95
 SIMILAR_ANSWER_THRESHOLD = 0.7
 CHARACTER_USE_RATIO = 0.42
+REPEATED_CHARACTER_RATIO = 0.20
 EXCEPTION_RE = r"^Domain (.*) didn't .*!$"
 RE_COMPILE = regex.compile(EXCEPTION_RE)
 COMMON_MALFORMED_PROTOCOLS = [
@@ -108,6 +109,8 @@ def malicious_link(s, site, *args):
         return False, ''
     except tld.exceptions.TldBadUrl:
         return False, ''
+    except ValueError as err:
+        return False, ''
 
     if levenshtein(parsed_href.domain.lower(), parsed_text.domain.lower()) > LEVEN_DOMAIN_DISTANCE:
         return True, 'Domain {} indicated by possible misleading text {}.'.format(
@@ -151,10 +154,10 @@ def has_repeating_characters(s, site, *args):
     s = regex.sub('http[^"]*', "", s)    # remove URLs for this check
     if s is None or len(s) == 0 or len(s) >= 300 or regex.compile("<pre>|<code>").search(s):
         return False, ""
-    matches = regex.compile(u"([^\\s_\u200b\u200c.,?!=~*/0-9-])(\\1{10,})", regex.UNICODE).findall(s)
+    matches = regex.compile(u"([^\\s_\u200b\u200c.,?!=~*/0-9-])(\\1{9,})", regex.UNICODE).findall(s)
     match = "".join(["".join(match) for match in matches])
-    if (100 * len(match) / len(s)) >= 20:  # Repeating characters make up >= 20 percent
-        return True, u"Repeated character: *{}*".format(match)
+    if len(match) / float(len(s)) >= REPEATED_CHARACTER_RATIO:  # Repeating characters make up >= 20 percent
+        return True, u"Repeated character: *{}*".format("*, *".join(["".join(match) for match in matches]))
     return False, ""
 
 
@@ -605,11 +608,14 @@ def strip_urls_and_tags(string):
 
 # noinspection PyUnusedLocal,PyMissingTypeHints
 def mostly_dots(s, site, *args):
-    body = strip_urls_and_tags(s)
-    body_length = len(body)
+    body = s
+    # To ensure the length calculation is correct
+    body_length = len(strip_urls_and_tags(s))
 
     body = regex.sub("(?s)<pre>.*?</pre>", "", body)
     body = regex.sub("(?s)<code>.*?</code>", "", body)
+    # Strip tags AFTER code blocks are stripped
+    body = strip_urls_and_tags(body)
 
     dot_count = len(regex.findall(r"\.", body))
 
@@ -1140,7 +1146,14 @@ class FindSpam:
         {'method': mostly_dots, 'all': True, 'sites': ['codegolf.stackexchange.com'],
          'reason': 'mostly dots in {}', 'title': True, 'body': True, 'username': False, 'body_summary': False,
          'stripcodeblocks': False, 'max_rep': 50, 'max_score': 0},
-
+        # Title ends with Comma (IPS Troll)
+        {'regex': r".*\,$", 'all': False, 'sites': ['interpersonal.stackexchange.com'],
+         'reason': "title ends with comma", 'title': True, 'body': False, 'username': False, 'stripcodeblocks': False,
+         'body_summary': False, 'max_rep': 50, 'max_score': 0},
+        # Title starts and ends with a forward slash
+        {'regex': r"^\/.*\/$", 'all': True, 'sites': [], 'reason': "title starts and ends with a forward slash",
+         'title': True, 'body': False, 'username': False, 'stripcodeblocks': False, 'body_summary': False,
+         'max_rep': 1, 'max_score': 0},
         #
         # Category: other
         # Blacklisted usernames

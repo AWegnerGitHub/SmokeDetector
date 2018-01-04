@@ -16,8 +16,9 @@ from unittest.mock import patch
 def test_coffee():
     msg = Fake({"owner": {"name": "El'endia Starman"}})
 
-    assert chatcommands.coffee(None, original_msg=msg) == "*brews coffee for @El'endiaStarman*"
-    assert chatcommands.coffee("angussidney") == "*brews coffee for @angussidney*"
+    coffees = "\*brews a cup of ({}) for ".format("|".join(chatcommands.COFFEES))
+    assert regex.match(coffees + "@El'endiaStarman\*", chatcommands.coffee(None, original_msg=msg))
+    assert regex.match(coffees + "@angussidney\*", chatcommands.coffee("angussidney"))
 
 
 def test_tea():
@@ -57,7 +58,7 @@ def test_hats(date):
     date.utcnow.return_value = datetime.datetime(2017, 12, 12, hour=23)
     assert chatcommands.hats() == "WE LOVE HATS! Winter Bash will begin in 0 days, 1 hour, 0 minutes, and 0 seconds."
 
-    date.utcnow.return_value = datetime.datetime(2018, 1, 8, hour=23)
+    date.utcnow.return_value = datetime.datetime(2018, 1, 2, hour=23)
     assert chatcommands.hats() == "Winter Bash won't end for 0 days, 1 hour, 0 minutes, and 0 seconds. GO EARN SOME HATS!"
 
 

@@ -110,6 +110,7 @@ stackexchange.com:
       - 269502   # micsthepick
       - 205533   # Videonauth
       - 275329   # iBug
+      - 78973    # gparyani
 
 
   3877:  # Raiders of the Lost Downboat
@@ -206,6 +207,7 @@ meta.stackexchange.com:
       - all
       - metatavern
       - delay
+      - site-no-stackoverflow.com
       - no-all-caps body
       - no-all-caps answer
       - no-repeating characters in body
@@ -296,6 +298,7 @@ meta.stackexchange.com:
       - 346854   # DonQuiKong
       - 284336   # Catija
       - 310369   # quartata
+      - 350567   # iDebug (iBug on SO)
 
 
 stackoverflow.com:
@@ -383,7 +386,6 @@ stackoverflow.com:
       - 8242698  # user0042
       - 3773011  # Makyen
       - 2858773  # Ajay Brahmakshatriya
-      - 4766556  # quartata
 
   111347:  # SOBotics
     commands: true
@@ -407,3 +409,4 @@ stackoverflow.com:
       - 563532   # Rob
       - 4050842  # Thaillie
       - 1915448  # g00glen00b
+      - 4766556  # quartata

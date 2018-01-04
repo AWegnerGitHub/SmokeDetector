@@ -80,13 +80,7 @@ def init(username, password):
         parse_room_config("rooms.yml")
 
     if not GlobalVars.standby_mode:
-        for site, roomid in _command_rooms:
-            room = _clients[site].get_room(roomid)
-            deletion_watcher = (site, roomid) in _watcher_rooms
-
-            room.join()
-            room.watch_socket(on_msg)
-            _rooms[(site, roomid)] = RoomData(room, -1, deletion_watcher)
+        join_command_rooms()
 
     if os.path.isfile("messageData.p"):
         try:
@@ -96,6 +90,16 @@ def init(username, password):
 
     threading.Thread(name="pickle ---rick--- runner", target=pickle_last_messages, daemon=True).start()
     threading.Thread(name="message sender", target=send_messages, daemon=True).start()
+
+
+def join_command_rooms():
+    for site, roomid in _command_rooms:
+        room = _clients[site].get_room(roomid)
+        deletion_watcher = (site, roomid) in _watcher_rooms
+
+        room.join()
+        room.watch_socket(on_msg)
+        _rooms[(site, roomid)] = RoomData(room, -1, deletion_watcher)
 
 
 def parse_room_config(path):
@@ -195,17 +199,16 @@ def on_msg(msg, client):
 
             if result:
                 _msg_queue.put((room_data, ":{} {}".format(message.id, result), None))
-        elif len(message.content) > 3:
-            if message.content.startswith("sd "):
-                result = dispatch_shorthand_command(message)
+        elif message.content.startswith("sd "):
+            result = dispatch_shorthand_command(message)
 
-                if result:
-                    _msg_queue.put((room_data, ":{} {}".format(message.id, result), None))
-            elif message.content.startswith("!!/"):
-                result = dispatch_command(message)
+            if result:
+                _msg_queue.put((room_data, ":{} {}".format(message.id, result), None))
+        elif message.content.startswith("!!/"):
+            result = dispatch_command(message)
 
-                if result:
-                    _msg_queue.put((room_data, ":{} {}".format(message.id, result), None))
+            if result:
+                _msg_queue.put((room_data, ":{} {}".format(message.id, result), None))
 
 
 def tell_rooms_with(prop, msg, notify_site="", report_data=None):
@@ -362,6 +365,9 @@ def dispatch_command(msg):
         cmd, = command_parts
         args = ""
 
+    if len(cmd) == 3:
+        return
+
     command_name = cmd[3:].lower()
 
     quiet_action = command_name[-1] == "-"
@@ -405,6 +411,9 @@ def dispatch_reply_command(msg, reply, cmd):
 
 def dispatch_shorthand_command(msg):
     commands = GlobalVars.parser.unescape(msg.content[3:]).split()
+
+    if len(commands) == 0:
+        return
 
     output = []
     processed_commands = []

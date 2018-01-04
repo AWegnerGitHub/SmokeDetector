@@ -54,3 +54,7 @@ JoeClark
 ^Madhav sharma$
 car\W?insurance
 ^xiao(?:xi|zhu)$
+lavinia\W?stark
+rosanna\W?cart
+annalee899
+evie\W?berge
